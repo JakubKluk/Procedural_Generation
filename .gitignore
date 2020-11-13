@@ -1,0 +1,4 @@
+/ProcessedData/*/
+/OriginalData/*
+.idea
+!/ProcessedData/plots
