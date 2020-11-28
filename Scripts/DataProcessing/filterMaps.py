@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from Scripts.Util.configFile import MIN_LAND_PERCENTAGE, PROCESSED_PATH
+from Scripts.Util.ConfigFile import MIN_LAND_PERCENTAGE, PROCESSED_PATH
 
 
 def filter_maps(min_perc: int, cropped_files: Path) -> None:
@@ -10,11 +10,12 @@ def filter_maps(min_perc: int, cropped_files: Path) -> None:
         arr = np.array(im)
         if (100 * np.round(np.count_nonzero(arr) / (arr.shape[0] * arr.shape[1]), 2)) > min_perc:
             dir_name = cropped_files.name.replace("cropped", "filtered") + "_m" + str(min_perc)
-            save_path = PROCESSED_PATH / dir_name
+            # redundant directory "subfolder" us used by torch libraries to load data
+            save_path = PROCESSED_PATH / dir_name / "subfolder"
             try:
                 im.save(save_path / file.name)
             except FileNotFoundError:
-                Path.mkdir(save_path)
+                Path.mkdir(save_path, parents=True)
                 im.save(save_path / file.name)
 
 

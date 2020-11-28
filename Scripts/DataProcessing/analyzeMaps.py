@@ -3,7 +3,7 @@ from PIL import Image
 from pathlib import Path
 import numpy as np
 from collections import Counter
-from Scripts.Util.configFile import PROCESSED_PATH
+from Scripts.Util.ConfigFile import PROCESSED_PATH
 from tqdm import tqdm
 
 

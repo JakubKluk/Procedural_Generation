@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from Scripts.Util.configFile import MAP_WIDTH, MAP_HEIGHT, JUMP_SIZE, DATA_PATH
+from Scripts.Util.ConfigFile import MAP_WIDTH, MAP_HEIGHT, JUMP_SIZE, DATA_PATH, PROCESSED_PATH
 
 
 def crop(im: Image, height: int, width: int, jump_size=1) -> Image:
@@ -25,14 +25,12 @@ def create_sub_images(im: Image, height: int, width: int, jump_size: int, save_p
     for k, piece in enumerate(crop(im, height, width, jump_size)):
         img = Image.new('L', (width, height), 255)
         img.paste(piece)
-        path = save_path / "{0}_{1}.tif".format(image_name, k)
+        path = save_path / "{0}_{1}.tif".format(image_name.split('.')[0], k)
         img.save(path)
 
 
 if __name__ == "__main__":
-
-    cropped_data = Path("../ProcessedData/cropped_h{0}_w{1}_j{2}".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE))
-
+    cropped_data = PROCESSED_PATH / "cropped_h{0}_w{1}_j{2}".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE)
     Path.mkdir(cropped_data, exist_ok=True)
     for f in DATA_PATH.iterdir():
         im = Image.open(f)
