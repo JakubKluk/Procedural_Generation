@@ -16,8 +16,9 @@ def weights_init(m):
 def create_data_loader(data_root, batch_size, workers):
     dataset = datasets.ImageFolder(root=data_root,
                                    transform=transforms.Compose([
+                                       transforms.Grayscale(),
                                        transforms.ToTensor(),
-                                       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                       transforms.Normalize((0.5), (0.5)),
                                    ]))
     # dataset = datasets.ImageFolder(root=data_root,
     #                  transform=transforms.Compose([

@@ -4,7 +4,7 @@ from typing import List, Dict
 import numpy as np
 from PIL import Image
 
-from Scripts.Util.ConfigFile import PROCESSED_PATH, DEFAULT_COLORING
+from Scripts.Util.ConfigFile import PROCESSED_PATH, DEFAULT_COLORING, MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE
 
 
 def color_map(img: np.array, break_colors: Dict[str, List] = DEFAULT_COLORING, interpolation: str = "linear"
@@ -67,9 +67,9 @@ def heightmap_to_color(filtered_files: Path, interpolation: str = "linear") -> N
 
 
 if __name__ == "__main__":
-    # path = Path(PROCESSED_PATH / "filtered_h720_w1280_j140_m30")
-    # heightmap_to_color(path, interpolation="expo")
-    ar = np.outer(np.arange(0, 255, 1), np.ones(10)).astype(np.uint8)
-    c_ar = color_map(ar, interpolation="linear")
-    img = Image.fromarray(c_ar)
-    img.show()
+    path = Path(PROCESSED_PATH / "filtered_h{0}_w{1}_j{2}".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE))
+    heightmap_to_color(path, interpolation="expo")
+    # ar = np.outer(np.arange(0, 255, 1), np.ones(10)).astype(np.uint8)
+    # c_ar = color_map(ar, interpolation="linear")
+    # img = Image.fromarray(c_ar)
+    # img.show()

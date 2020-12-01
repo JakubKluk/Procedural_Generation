@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from Scripts.Util.ConfigFile import MIN_LAND_PERCENTAGE, PROCESSED_PATH
+from Scripts.Util.ConfigFile import MIN_LAND_PERCENTAGE, PROCESSED_PATH, MAP_WIDTH, MAP_HEIGHT, JUMP_SIZE
 
 
 def filter_maps(min_perc: int, cropped_files: Path) -> None:
@@ -20,5 +20,5 @@ def filter_maps(min_perc: int, cropped_files: Path) -> None:
 
 
 if __name__ == "__main__":
-    path = Path(PROCESSED_PATH / "cropped_h720_w1280_j140")
+    path = Path(PROCESSED_PATH / "cropped_h{0}_w{1}_j{2}".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE))
     filter_maps(MIN_LAND_PERCENTAGE, path)
