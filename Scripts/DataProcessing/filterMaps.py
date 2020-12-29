@@ -20,5 +20,5 @@ def filter_maps(min_perc: int, cropped_files: Path) -> None:
 
 
 if __name__ == "__main__":
-    path = Path(PROCESSED_PATH / "cropped_h{0}_w{1}_j{2}".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE))
+    path = Path(PROCESSED_PATH / "cropped_h{0}_w{1}_j{2}_without_A2".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE))
     filter_maps(MIN_LAND_PERCENTAGE, path)

@@ -13,10 +13,11 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0)
 
 
-def create_data_loader(data_root, batch_size, workers):
+def create_data_loader(data_root, batch_size, workers, image_size):
     dataset = datasets.ImageFolder(root=data_root,
                                    transform=transforms.Compose([
                                        transforms.Grayscale(),
+                                       transforms.Resize(image_size),
                                        transforms.ToTensor(),
                                        transforms.Normalize((0.5), (0.5)),
                                    ]))

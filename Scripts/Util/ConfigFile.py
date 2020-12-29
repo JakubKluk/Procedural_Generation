@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-JUMP_SIZE = 128
+JUMP_SIZE = 64
 MAP_HEIGHT = 1024
 MAP_WIDTH = 1024
 
@@ -37,29 +37,30 @@ DEFAULT_COLORING = {"breakpoints": [0, 1, 128, 180, 255], "colors": [[0, 0, 255]
 # Neural Network Configuration
 
 # Data Loading
-IMAGE_ROOT_PATH = "..\\..\\ProcessedData\\filtered_h1024_w1024_j128_m30"
+IMAGE_ROOT_PATH = "..\\..\\ProcessedData\\filtered_h1024_w1024_j64_without_A2_m30"
 # IMAGE_ROOT_PATH = "..\\..\\OriginalData"
 WORKERS = 4
-BATCH_SIZE = 16
-IMAGE_SIZE = (1024, 1024)
+BATCH_SIZE = 4
+IMAGE_SIZE = (128, 128)
 SEED = 999                  # set a number for reproducibility. Use "None" to go random
 COLOR_CHANNELS = 1
 GPU = 1                     # 1 - use GPU, 0 - use CPU
 
 # Optimizers
-LEARNING_RATE = 0.0002
 BETAS = (0.5, 0.999)
 WAIT_FOR_UPDATE = 16         # how many batches has to pass before weight update (due to the high memory costs)
 
 # Generator
-GENERATOR_FEATURE_MAPS_SIZE = 8
+GENERATOR_LEARNING_RATE = 0.0002
+GENERATOR_FEATURE_MAPS_SIZE = 16
 LATENT_VECTOR_SIZE = 128
 
 # Discriminator
-DISCRIMINATOR_FEATURE_MAPS_SIZE = 8
+DISCRIMINATOR_LEARNING_RATE = 0.0002
+DISCRIMINATOR_FEATURE_MAPS_SIZE = 16
 
 # Training
-NUMBER_OF_EPOCHS = 5
+NUMBER_OF_EPOCHS = 10
 
 # Save outputs
-SAVE_MODEL_PATH = "..\\..\\ProcessedData\\Models\\Second_network"
+SAVE_MODEL_PATH = "..\\..\\ProcessedData\\Models\\final4"

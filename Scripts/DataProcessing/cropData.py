@@ -30,8 +30,10 @@ def create_sub_images(im: Image, height: int, width: int, jump_size: int, save_p
 
 
 if __name__ == "__main__":
-    cropped_data = PROCESSED_PATH / "cropped_h{0}_w{1}_j{2}".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE)
+    cropped_data = PROCESSED_PATH / "cropped_h{0}_w{1}_j{2}_without_A2".format(MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE)
     Path.mkdir(cropped_data, exist_ok=True)
     for f in DATA_PATH.iterdir():
+        if f.name == "gebco_08_rev_elev_A2_grey_geo.tif":
+            continue
         im = Image.open(f)
         create_sub_images(im, MAP_HEIGHT, MAP_WIDTH, JUMP_SIZE, cropped_data, f.name)

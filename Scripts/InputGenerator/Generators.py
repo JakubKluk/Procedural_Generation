@@ -67,7 +67,50 @@ class PerlinNoiseGenerator(InputGenerator):
         max_nonzero = world[indexes].max()
         factor = max_nonzero / (max_nonzero - min_nonzero - 1)
         world[indexes] = (world[indexes] - min_nonzero) * factor + 1
-        print(world.min(), world.max(), world[indexes].min())
+        # print(world.min(), world.max(), world[indexes].min())
+        return world
+
+    def generate_continento(self, land_percentage: float) -> np.array:
+        if not self.validate_percentage(land_percentage):
+            raise ValueError("The land_percentage argument is supposed to be a float number in range [0, 1]!")
+
+        # creating distance matrix
+        max_dist = np.sqrt((self._size[0] / 2)**2 + (self._size[1] / 2)**2)
+        distance_matrix = 0.5 * np.array(
+            [[255 * (1 - np.sqrt((i - (self._size[0] / 2)) ** 2 + (j - (self._size[1] / 2)) ** 2) / max_dist
+               ) ** 1 for i in range(self._size[0])] for j in range(self._size[1])])
+        # creating perlin's noise array
+        world = np.zeros(self._size)
+        for i in range(self._size[0]):
+            for j in range(self._size[1]):
+                world[i][j] = noise.pnoise2(i / self._scale,
+                                            j / self._scale,
+                                            octaves=self._octaves,
+                                            persistence=self._persistence,
+                                            lacunarity=self._lacunarity,
+                                            repeatx=self._size[0],
+                                            repeaty=self._size[1],
+                                            base=0)
+        # standardizing created array
+        world -= np.min(world)
+        world *= 255
+
+        # adding the distance
+        world = 0.5 * world + distance_matrix
+
+        # changing the format
+        world = world.astype(np.uint8)
+
+        # adjusting land percentage
+        world_height = np.sort(world.reshape(1, -1))
+        threshold = world_height[0, int((1 - land_percentage) * world_height.size)]
+        world[np.where(world < threshold)] = 0
+        indexes = world.nonzero()
+        min_nonzero = world[indexes].min()
+        max_nonzero = world[indexes].max()
+        factor = max_nonzero / (max_nonzero - min_nonzero - 1)
+        world[indexes] = (world[indexes] - min_nonzero) * factor + 1
+        # print(world.min(), world.max(), world[indexes].min())
         return world
                 
 
@@ -80,10 +123,11 @@ if __name__ == "__main__":
     # for i in range(len(pictures)):
     #     img = Image.fromarray(pictures[i])
     #     img.save(f"../../ProcessedData/noises/perlin/different_noises_{i}.png")
-    a = PerlinNoiseGenerator((720, 1280), octaves=8)
-    arr = a.generate_input_data(0.4)
+    a = PerlinNoiseGenerator((720, 720), octaves=8)
+    arr = a.generate_continento(0.4)
     img = Image.fromarray(arr)
-    img.save("../../ProcessedData/noises/perlin/img7.png")
-    c_arr = color_map(arr, interpolation="expo")
-    img = Image.fromarray(c_arr, 'RGB')
-    img.save("../../ProcessedData/noises/perlin/color_img7.png")
+    img.show()
+    # img.save("../../ProcessedData/noises/perlin/img7.png")
+    # c_arr = color_map(arr, interpolation="expo")
+    # img = Image.fromarray(c_arr, 'RGB')
+    # img.save("../../ProcessedData/noises/perlin/color_img7.png")

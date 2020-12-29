@@ -18,8 +18,8 @@ import torchvision.utils as vutils
 from Scripts.NeuralNetwork.NetworkModels import Generator, Discriminator
 from Scripts.NeuralNetwork.NetworkUtils import create_data_loader, weights_init
 from Scripts.Util.ConfigFile import BATCH_SIZE, WORKERS, IMAGE_ROOT_PATH, IMAGE_SIZE, SEED, COLOR_CHANNELS, GPU, \
-    LEARNING_RATE, BETAS, LATENT_VECTOR_SIZE, DISCRIMINATOR_FEATURE_MAPS_SIZE, GENERATOR_FEATURE_MAPS_SIZE, \
-    SAVE_MODEL_PATH, WAIT_FOR_UPDATE
+    GENERATOR_LEARNING_RATE, DISCRIMINATOR_LEARNING_RATE, BETAS, LATENT_VECTOR_SIZE, DISCRIMINATOR_FEATURE_MAPS_SIZE, \
+    GENERATOR_FEATURE_MAPS_SIZE, SAVE_MODEL_PATH, WAIT_FOR_UPDATE, NUMBER_OF_EPOCHS
 
 
 class MapGAN:
@@ -46,6 +46,8 @@ class MapGAN:
         self.dis_optimizer = None
         self.G_losses = []
         self.D_losses = []
+        self.G_perfo = []
+        self.D_perfo = []
         # initialization of program seed
         seed = seed if seed is not None else random.randint(1, 10000)
         random.seed(seed)
@@ -111,7 +113,7 @@ class MapGAN:
                  D_loss.item(), G_loss.item(), D_accu, G_accu_1, G_accu_2))
 
         # Save Losses for plotting later
-        if not (self.logging_path / "training_log.log").exists():
+        if not (self.logging_path / "training_log.csv").exists():
             with open(self.logging_path / "training_log.csv", "a") as log:
                 log.write("Iteration,DataLength,Epoch,AllEpochs,DiscriminatorLoss,GeneratorLoss,DiscriminatorAccuracy,"
                           "GeneratorAccuracy_1,GeneratorAccuracy_2\n")
@@ -127,12 +129,28 @@ class MapGAN:
         with torch.no_grad():
             fake = self.generator(fixed_noise).detach().cpu()
 
-            imags = vutils.make_grid(fake, padding=2, normalize=True, nrow=int(np.sqrt(self.batch_size)))
+            imags = vutils.make_grid(fake, padding=2, normalize=True, nrow=4)
             f = plt.figure()
             plt.axis("off")
             plt.title("Fake Images")
             plt.imshow(np.transpose(imags, (1, 2, 0)))
             f.savefig(self.logging_path / "generated_epoch_{0}_iteration_{1}.png".format(epoch, iteration))
+            plt.close(f)
+
+        G_average = [0] * 11
+        D_average = [0] * 11
+        G_average += list(np.convolve(self.G_losses, np.ones(12), 'valid') / 12)
+        D_average += list(np.convolve(self.D_losses, np.ones(12), 'valid') / 12)
+        f = plt.figure()
+        plt.title("Generator and Discriminator Average Loss During Training")
+        plt.plot(G_average, label="G")
+        plt.plot(D_average, label="D")
+        plt.xlabel("iterations")
+        plt.ylabel("Loss")
+        plt.legend()
+        f.savefig(self.logging_path / "average_losses_epoch_{0}_iteration_{1}.png".format(epoch, iteration))
+        plt.close(f)
+
 
         f = plt.figure()
         plt.title("Generator and Discriminator Loss During Training")
@@ -142,18 +160,45 @@ class MapGAN:
         plt.ylabel("Loss")
         plt.legend()
         f.savefig(self.logging_path / "losses_epoch_{0}_iteration_{1}.png".format(epoch, iteration))
+        plt.close(f)
+
+        f = plt.figure()
+        plt.title("Generator and Discriminator Performance During Training")
+        plt.plot(self.G_perfo, label="G")
+        plt.plot(self.D_perfo, label="D")
+        plt.xlabel("iterations")
+        plt.ylabel("Performance")
+        plt.legend()
+        f.savefig(self.logging_path / "performance_epoch_{0}_iteration_{1}.png".format(epoch, iteration))
+        plt.close(f)
+
+        G_average = [0] * 11
+        D_average = [0] * 11
+        G_average += list(np.convolve(self.G_perfo, np.ones(12), 'valid') / 12)
+        D_average += list(np.convolve(self.D_perfo, np.ones(12), 'valid') / 12)
+        f = plt.figure()
+        plt.title("Generator and Discriminator Average Performance During Training")
+        plt.plot(G_average, label="G")
+        plt.plot(D_average, label="D")
+        plt.xlabel("iterations")
+        plt.ylabel("Loss")
+        plt.legend()
+        f.savefig(self.logging_path / "average_performance_epoch_{0}_iteration_{1}.png".format(epoch, iteration))
+        plt.close(f)
 
     def train(self, epochs: int, criterion, print_training_stats: int = 50, save_generator_output: int = 500):
         # Create batch of latent vectors that we will use to visualize
         #  the progression of the generator
-        fixed_noise = torch.randn(self.batch_size, self.generator.latent_vector_size, 1, 1, device=self.device)
+        fixed_noise = torch.randn(16, self.generator.latent_vector_size, 1, 1, device=self.device)
+        # number of fixed noise images is independent from the batch size, because it is used only for a progress
+        # visualization
 
         # Establish convention for real and fake labels during training
         real_label = 1.
         fake_label = 0.
 
         # initializing dataloader
-        dataloader = create_data_loader(self.dataroot, self.batch_size, self.workers)
+        dataloader = create_data_loader(self.dataroot, self.batch_size, self.workers, self.image_size)
         print("Starting the training loop.")
         for epoch in range(epochs):
             for i, data in enumerate(dataloader):
@@ -164,7 +209,8 @@ class MapGAN:
                 # Format batch
                 real_cpu = data[0].to(self.device)
                 b_size = real_cpu.size(0)
-                label = torch.full((b_size,), real_label, dtype=torch.float, device=self.device)
+                # label = torch.full((b_size,), real_label, dtype=torch.float, device=self.device)
+                label = 0.08 * torch.randn((b_size,), dtype=torch.float, device=self.device) + 0.9
                 # Forward pass real batch through D
                 output = self.discriminator(real_cpu).view(-1)
                 # Calculate loss on all-real batch
@@ -179,6 +225,7 @@ class MapGAN:
                 # Generate fake image batch with G
                 fake = self.generator(noise)
                 label.fill_(fake_label)
+                # label = 0.2 * torch.randn((b_size,), dtype=torch.float, device=self.device) + 0.3
                 # Classify all fake batch with D
                 # .detach() is used not to update generator's weights
                 output = self.discriminator(fake.detach()).view(-1)
@@ -190,8 +237,9 @@ class MapGAN:
                 # Add the gradients from the all-real and all-fake batches
                 errD = errD_real + errD_fake
                 # Update D
-                if ((i % self.batch_waiting) == (self.batch_waiting - 1)) or (i == (len(dataloader) - 1)):
-                    self.dis_optimizer.step()
+                # if ((i % self.batch_waiting) == (self.batch_waiting - 1)) or (i == (len(dataloader) - 1)):
+                #     self.dis_optimizer.step()
+                self.dis_optimizer.step()
 
                 # ====================================================================
                 # (2) Updating Generator
@@ -212,11 +260,14 @@ class MapGAN:
 
                 # ====================================================================
                 # (3) Output training stats
-                self.G_losses.append(errG.item())
-                self.D_losses.append(errD.item())
+
                 if (i % print_training_stats) == 0 and i != 0:
                     self.log_training_progress(i, len(dataloader), epoch, epochs, errD, errG, D_x, D_G_z1, D_G_z2)
-                if ((i % 500 == 0) and i != 0) or ((epoch == epochs - 1) and (i == len(dataloader) - 1)):
+                    self.G_losses.append(errG.item())
+                    self.D_losses.append(errD.item())
+                    self.G_perfo.append(D_G_z2)
+                    self.D_perfo.append(D_x)
+                if ((i % save_generator_output == 0) and i != 0) or ((epoch == epochs - 1) and (i == len(dataloader) - 1)):
                     self.log_training_results(epoch, i, fixed_noise)
 
 
@@ -225,13 +276,15 @@ if __name__ == '__main__':
     # optimisers
     opt_g = optim.Adam
     opt_d = optim.Adam
-    opt_g_params = {"lr": 0.001, "betas": BETAS}
-    opt_d_params = {"lr": LEARNING_RATE, "betas": BETAS}
+    opt_g_params = {"lr": GENERATOR_LEARNING_RATE, "betas": BETAS}
+    opt_d_params = {"lr": DISCRIMINATOR_LEARNING_RATE, "betas": BETAS}
     # Initialize BCELoss function
     criterion = nn.BCELoss()
 
     gan = MapGAN()
     gan.init_generator(COLOR_CHANNELS, LATENT_VECTOR_SIZE, GENERATOR_FEATURE_MAPS_SIZE, opt_g, opt_g_params)
     gan.init_discriminator(COLOR_CHANNELS, DISCRIMINATOR_FEATURE_MAPS_SIZE, opt_d, opt_d_params)
-    gan.train(5, criterion)
+    gan.train(NUMBER_OF_EPOCHS, criterion, print_training_stats=100, save_generator_output=2500)
     gan.save_gan(Path(SAVE_MODEL_PATH))
+    # gan.load_gan(Path(SAVE_MODEL_PATH))
+    print("End")
